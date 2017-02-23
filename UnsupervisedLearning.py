@@ -15,10 +15,10 @@ def unsupervised_learning(n_states, n_iters):
     HMM = unsupervised_HMM(lines, n_states, n_iters)
     numLines = 14
     for i in range(0, numLines):
-        numWords = 10
-        emission = HMM.generate_emission(numWords, HMM.indexes)
+        numSyllables = 10
+        emission = HMM.generate_emission(HMM.indexes, numSyllables)
         print(emission)
 
 numStates = 10
-numIter = 50
+numIter = 100
 unsupervised_learning(numStates, numIter)

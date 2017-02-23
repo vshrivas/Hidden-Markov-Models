@@ -8,6 +8,7 @@
 
 import random
 import string
+from nltk.corpus import cmudict
 
 class HiddenMarkovModel:
     '''
@@ -261,22 +262,28 @@ class HiddenMarkovModel:
                 for xt in range(self.D):
                     self.O[curr][xt] = O_num[curr][xt] / O_den[curr]
 
-    def generate_emission(self, M, indexes):
+    def generate_emission(self, indexes, syllabCount):
         '''
         Generates an emission of length M, assuming that the starting state
         is chosen uniformly at random. 
 
         Arguments:
-            M:          Length of the emission to generate.
+            indexes: Dictionary mapping each index to its word
+            syllabCount: number of syllables each line should have
 
         Returns:
             emission:   The randomly generated emission as a string.
         '''
 
         emission = ''
+        # use cmu dictionary from nltk to calculate syllable counts
+        d = cmudict.dict()
+        numSyllables = 0
+
         state = random.choice(range(self.L))
 
-        for t in range(M):
+        # keep adding words to line until reach required syllable count
+        while numSyllables < syllabCount:
             # Sample next observation.
             rand_var = random.uniform(0, 1)
             next_obs = 0
@@ -286,7 +293,25 @@ class HiddenMarkovModel:
                 next_obs += 1
 
             next_obs -= 1
-            emission += ' ' + indexes[next_obs]
+            nextWord = indexes[next_obs]
+            wordSyllab = 0
+
+            # word isn't in dictionary
+            if nextWord not in d:
+                print('****', nextWord, 'not in dictionary ****')
+                wordSyllab = 3
+            # get syllable count for most common pronunciation
+            else:
+                wordSyllab = nsyl(nextWord, d)
+
+            # adding word to line would exceed syllable limit per line
+            # skip word, don't add it to line
+            if numSyllables + wordSyllab > syllabCount:
+                continue
+            else:
+                numSyllables += wordSyllab
+
+            emission += ' ' + nextWord
 
             # Sample next state.
             rand_var = random.uniform(0, 1)
@@ -300,6 +325,14 @@ class HiddenMarkovModel:
             state = next_state
 
         return emission
+
+# helper method to calculate the syllable count
+# word is the word to calculate the syllable count for, and d is the dictionary
+def nsyl(word, d):
+    # get syllable counts for all pronunciations of the word
+    pronunciationSyllabs = [len(list(y for y in x if y[-1].isdigit())) for x in d[word.lower()]] 
+    # return syllable count for first pronunciation, assuming that is the most common one
+    return pronunciationSyllabs[0]
 
 def unsupervised_HMM(X, n_states, n_iters):
     '''
