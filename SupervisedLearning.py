@@ -99,13 +99,38 @@ def supervised_learning():
             word = line[word_index]
             Y[line_index].append(getStressState(word, statesDict, states_1))
 
-    # Train the HMM.
-    HMM = supervised_HMM(lines[1:500], Y[1:500], 16)
+    # Train the HMM using a portion of the training data 
+    HMM = supervised_HMM(lines[1:1000], Y[1:1000], 16)
+
+    return HMM
+
+# use supervised and unsupervised learning to get semi-supervised learning
+def semi_supervised_learning():
+    lines = load_Shakespeare_Lines()
+    HMM = supervised_learning()
+    
+    # Make a set of observations.
+    observations = {}
+    indexes = {}
+    index = 0
+    for x in lines[1:1000]:
+        wordList = x
+        for word in wordList:
+            if word == ' ':
+                print('FOUND SPACE')
+            observations[word] = index
+            indexes[index] = word
+            index += 1
+
+    print "before unsupervise: "
+    print HMM.A
+    HMM.unsupervised_learning(lines[1:1000], 50, observations)
+    print "after unsupervised: "
+    print HMM.A
     numLines = 14
     for i in range(0, numLines):
         numSyllables = 10
         emission = HMM.generate_emission(HMM.indexes, numSyllables)
         print(emission)
-    
 
-supervised_learning()
+semi_supervised_learning()

@@ -378,6 +378,7 @@ class HiddenMarkovModel:
             # if numSyllables + wordSyllab > syllabCount:
             #     continue
             # else:
+            # I commented this out, so the resulting line may exceed 10 syllables 
             numSyllables += wordSyllab
 
             emission += ' ' + nextWord
