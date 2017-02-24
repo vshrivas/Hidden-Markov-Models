@@ -100,7 +100,7 @@ def supervised_learning():
             Y[line_index].append(getStressState(word, statesDict, states_1))
 
     # Train the HMM using a portion of the training data 
-    HMM = supervised_HMM(lines[1:1000], Y[1:1000], 16)
+    HMM = supervised_HMM(lines, Y, 16)
 
     return HMM
 
@@ -113,7 +113,7 @@ def semi_supervised_learning():
     observations = {}
     indexes = {}
     index = 0
-    for x in lines[1:1000]:
+    for x in lines:
         wordList = x
         for word in wordList:
             if word == ' ':
@@ -124,7 +124,7 @@ def semi_supervised_learning():
 
     print "before unsupervise: "
     print HMM.A
-    HMM.unsupervised_learning(lines[1:1000], 50, observations)
+    HMM.unsupervised_learning(lines, 50, observations)
     print "after unsupervised: "
     print HMM.A
     numLines = 14
