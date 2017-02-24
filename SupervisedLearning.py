@@ -100,11 +100,12 @@ def supervised_learning():
             Y[line_index].append(getStressState(word, statesDict, states_1))
 
     # Train the HMM.
-    HMM = supervised_HMM(lines, Y) 
+    HMM = supervised_HMM(lines[1:500], Y[1:500], 16)
     numLines = 14
     for i in range(0, numLines):
         numSyllables = 10
         emission = HMM.generate_emission(HMM.indexes, numSyllables)
         print(emission)
+    
 
 supervised_learning()

@@ -9,6 +9,7 @@
 import random
 import string
 from nltk.corpus import cmudict
+import numpy as np
 
 class HiddenMarkovModel:
     '''
@@ -176,7 +177,7 @@ class HiddenMarkovModel:
 
         return betas
 
-    def supervised_learning(self, X, Y):
+    def supervised_learning(self, X, Y, observations):
         '''
         Trains the HMM using the Maximum Likelihood closed form solutions
         for the transition and observation matrices on a labeled
@@ -234,7 +235,7 @@ class HiddenMarkovModel:
                     for state_index in range(len(Y[stateSequence_index])):
                         word = X[stateSequence_index][state_index]
                         state = Y[stateSequence_index][state_index]
-                        if word == w and state == z:
+                        if w == observations[word] and state == z:
                             numer_count += 1
                             denom_count += 1
                         elif state == z:
@@ -374,10 +375,10 @@ class HiddenMarkovModel:
 
             # adding word to line would exceed syllable limit per line
             # skip word, don't add it to line
-            if numSyllables + wordSyllab > syllabCount:
-                continue
-            else:
-                numSyllables += wordSyllab
+            # if numSyllables + wordSyllab > syllabCount:
+            #     continue
+            # else:
+            numSyllables += wordSyllab
 
             emission += ' ' + nextWord
 
@@ -459,7 +460,7 @@ def unsupervised_HMM(X, n_states, n_iters):
 
     return HMM
 
-def supervised_HMM(X, Y):
+def supervised_HMM(X, Y, n_states):
     '''
     Helper function to train a supervised HMM. The function determines the
     number of unique states and observations in the given data, initializes
@@ -471,19 +472,27 @@ def supervised_HMM(X, Y):
         Y:          A corresponding list of variable length state sequences
                     Note that the elements in X line up with those in Y
     '''
-    # Make a set of observations.
-    observations = set()
-    for x in X:
-        observations |= set(x)
-
     # Make a set of states.
     states = set()
     for y in Y:
         states |= set(y)
     
+    # Make a set of observations.
+    observations = {}
+    indexes = {}
+    index = 0
+    for x in X:
+        wordList = x
+        for word in wordList:
+            if word == ' ':
+                print('FOUND SPACE')
+            observations[word] = index
+            indexes[index] = word
+            index += 1
+
     # Compute L and D.
     L = len(states)
-    D = len(observations)
+    D = index + 1
 
     # Randomly initialize and normalize matrices A and O.
     A = [[random.random() for i in range(L)] for j in range(L)]
@@ -501,7 +510,7 @@ def supervised_HMM(X, Y):
             O[i][j] /= norm
 
     # Train an HMM with labeled data.
-    HMM = HiddenMarkovModel(A, O, [])
-    HMM.supervised_learning(X, Y)
+    HMM = HiddenMarkovModel(A, O, indexes)
+    HMM.supervised_learning(X, Y, observations)
 
     return HMM
