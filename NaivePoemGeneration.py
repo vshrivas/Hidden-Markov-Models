@@ -1,7 +1,6 @@
 import string
 
 def load_Shakespeare_Lines():
-	translator = str.maketrans('', '', string.punctuation)
 	lines = []
 	with open('shakespeare.txt') as f:
 		poemLine = []
@@ -11,13 +10,9 @@ def load_Shakespeare_Lines():
 				continue
 			else:
 				for word in workLine.split():
-					poemLine.append(word.translate(translator).lower())
-					lines.append(poemLine)
-					poemLine = []
+					poemLine.append(word.translate(None, string.punctuation).lower())
+			lines.append(poemLine)
+			poemLine = []
 
 	#print(lines)
 	return lines
-
-
-
-
