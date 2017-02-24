@@ -15,7 +15,7 @@ class HiddenMarkovModel:
     Class implementation of Hidden Markov Models.
     '''
 
-    def __init__(self, A, O, indexes):
+    def __init__(self, A, O, indexes, observations, rhymingDict):
         '''
         Initializes an HMM. Assumes the following:
             - States and observations are integers starting from 0. 
@@ -55,6 +55,8 @@ class HiddenMarkovModel:
         self.O = O
         self.A_start = [1. / self.L for _ in range(self.L)]
         self.indexes = indexes
+        self.observations = observations
+        self.rhymingDict = rhymingDict
 
 
     def forward(self, x, observations, normalize=False):
@@ -262,7 +264,7 @@ class HiddenMarkovModel:
                 for xt in range(self.D):
                     self.O[curr][xt] = O_num[curr][xt] / O_den[curr]
 
-    def generate_emission(self, indexes, syllabCount):
+    def generate_best_emission(self, indexes, syllabCount, endWord):
         '''
         Generates an emission of length M, assuming that the starting state
         is chosen uniformly at random. 
@@ -279,27 +281,65 @@ class HiddenMarkovModel:
         # use cmu dictionary from nltk to calculate syllable counts
         d = cmudict.dict()
         numSyllables = 0
+        defaultSyllabCount = 2
+        numWord = 0
+        state = -1
 
-        state = random.choice(range(self.L))
+        # if we have an end word for line
+        if(endWord != ''):
+            # start with state that most likely generated that word
+            maxProb = 0
+            # get index of word
+            wordIndex = self.observations[endWord]
+            # find state with highest probability of generating word
+            for i in range(0, self.L):
+                prob = self.O[i][wordIndex]
+                if(prob > maxProb):
+                    state = i
+                    maxProb = prob
+            # use that state as the start state
+            # add endWord to emission seq
+            emission = endWord
+            if endWord not in d:
+                numSyllables  += defaultSyllabCount
+            else:
+                numSyllables += nsyl(endWord, d)
+
+            # Find highest probability previous state 
+            # to have reverse HMM generation
+            maxProb = 0
+            prev_state = -1
+            for i in range(0, self.L):
+                prob = self.O[i][state]
+                if(prob > maxProb):
+                    prev_state = i
+                    maxProb = prob
+
+            state = prev_state
+
+        # no end word specified, choose random start state
+        else:
+            state = random.choice(range(self.L))
 
         # keep adding words to line until reach required syllable count
         while numSyllables < syllabCount:
-            # Sample next observation.
-            rand_var = random.uniform(0, 1)
-            next_obs = 0
+            # Find best observation from this state
+            maxProb = 0
+            bestWordId = -1
+            for wordId in range(0, self.D):
+                prob = self.O[state][wordId]
+                if(prob > maxProb):
+                    bestWordId = wordId
+                    maxProb = prob
 
-            while rand_var > 0:
-                rand_var -= self.O[state][next_obs]
-                next_obs += 1
-
-            next_obs -= 1
-            nextWord = indexes[next_obs]
+            # found next observation
+            nextWord = indexes[bestWordId]
+            
             wordSyllab = 0
-
             # word isn't in dictionary
             if nextWord not in d:
-                print('****', nextWord, 'not in dictionary ****')
-                wordSyllab = 3
+                #print('****', nextWord, 'not in dictionary ****')
+                wordSyllab = defaultSyllabCount
             # get syllable count for most common pronunciation
             else:
                 wordSyllab = nsyl(nextWord, d)
@@ -311,20 +351,124 @@ class HiddenMarkovModel:
             else:
                 numSyllables += wordSyllab
 
-            emission += ' ' + nextWord
+            emission = nextWord + ' ' + emission
 
-            # Sample next state.
+            # Find highest probability previous state 
+            # to have reverse HMM generation
+            maxProb = 0
+            prev_state = -1
+            for i in range(0, self.L):
+                prob = self.O[i][state]
+                if(prob > maxProb):
+                    prev_state = i
+                    maxProb = prob
+
+            state = prev_state
+
+        return emission.strip()
+
+    def generate_emission(self, indexes, syllabCount, endWord):
+        '''
+        Generates an emission of length M, assuming that the starting state
+        is chosen uniformly at random. 
+
+        Arguments:
+            indexes: Dictionary mapping each index to its word
+            syllabCount: number of syllables each line should have
+
+        Returns:
+            emission:   The randomly generated emission as a string.
+        '''
+
+        emission = ''
+        # use cmu dictionary from nltk to calculate syllable counts
+        d = cmudict.dict()
+        numSyllables = 0
+        defaultSyllabCount = 2
+        numWord = 0
+        state = -1
+
+        # if we have an end word for line
+        if(endWord != ''):
+            # start with state that most likely generated that word
+            maxProb = 0
+            # get index of word
+            wordIndex = self.observations[endWord]
+            # find state with highest probability of generating word
+            for i in range(0, self.L):
+                prob = self.O[i][wordIndex]
+                if(prob > maxProb):
+                    state = i
+                    maxProb = prob
+            # use that state as the start state
+            # add endWord to emission seq
+            emission  = endWord
+            if endWord not in d:
+                numSyllables  += defaultSyllabCount
+            else:
+                numSyllables += nsyl(endWord, d)
+
+            # Sample prev state.
+            # to have reverse HMM generation
             rand_var = random.uniform(0, 1)
-            next_state = 0
+            prev_state = 0
 
-            while rand_var > 0 and next_state < self.L:
-                rand_var -= self.A[state][next_state]
-                next_state += 1
+            while rand_var > 0 and prev_state < self.L:
+                rand_var -= self.A[prev_state][state]
+                prev_state += 1
 
-            next_state -= 1
-            state = next_state
+            prev_state -= 1
+            state = prev_state
 
-        return emission
+        # no end word specified, choose random start state
+        else:
+            state = random.choice(range(self.L))
+
+        # keep adding words to line until reach required syllable count
+        while numSyllables < syllabCount:
+            # Sample next observation.
+            rand_var = random.uniform(0, 1)
+            next_obs = 0
+
+            while rand_var > 0:
+                rand_var -= self.O[state][next_obs]
+                next_obs += 1
+            next_obs -= 1
+
+            # found next observation
+            nextWord = indexes[next_obs]
+            
+            wordSyllab = 0
+            # word isn't in dictionary
+            if nextWord not in d:
+                #print('****', nextWord, 'not in dictionary ****')
+                wordSyllab = defaultSyllabCount
+            # get syllable count for most common pronunciation
+            else:
+                wordSyllab = nsyl(nextWord, d)
+
+            # adding word to line would exceed syllable limit per line
+            # skip word, don't add it to line
+            if numSyllables + wordSyllab > syllabCount:
+                continue
+            else:
+                numSyllables += wordSyllab
+
+            emission = nextWord + ' ' + emission
+
+            # Sample prev state.
+            # to have reverse HMM generation
+            rand_var = random.uniform(0, 1)
+            prev_state = 0
+
+            while rand_var > 0 and prev_state < self.L:
+                rand_var -= self.A[prev_state][state]
+                prev_state += 1
+
+            prev_state -= 1
+            state = prev_state
+
+        return emission.strip()
 
 # helper method to calculate the syllable count
 # word is the word to calculate the syllable count for, and d is the dictionary
@@ -334,7 +478,7 @@ def nsyl(word, d):
     # return syllable count for first pronunciation, assuming that is the most common one
     return pronunciationSyllabs[0]
 
-def unsupervised_HMM(X, n_states, n_iters):
+def unsupervised_HMM(X, n_states, n_iters, rhymingDict):
     '''
     Helper function to train an unsupervised HMM. The function determines the
     number of unique observations in the given data, initializes
@@ -386,7 +530,7 @@ def unsupervised_HMM(X, n_states, n_iters):
             O[i][j] /= norm
 
     # Train an HMM with unlabeled data.
-    HMM = HiddenMarkovModel(A, O, indexes)
+    HMM = HiddenMarkovModel(A, O, indexes, observations, rhymingDict)
     HMM.unsupervised_learning(X, n_iters, observations)
 
     return HMM
