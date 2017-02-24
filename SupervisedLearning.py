@@ -8,6 +8,7 @@ import numpy as np
 # takes in the state labels of each stress class and a dictionary of all stress patterns
 def getStressState(word, dictionary, state1_vals):
     # if the given word is not in d, automatically assign state1 
+    #print(word)
     if word not in dictionary:
         return state1_vals[np.random.randint(0,len(state1_vals))]
     # if it is, return the appropriate state
@@ -68,7 +69,7 @@ def supervised_learning():
 
     d = cmudict.dict()
     # get the input lines from the shakespeare lines
-    lines = load_Shakespeare_Lines()
+    lines, rhymingDict = load_Shakespeare_Lines()
 
     # array of possible states; can be split into several cases
     # Case 1: states in which we have a word that begins and ends with a
@@ -100,13 +101,13 @@ def supervised_learning():
             Y[line_index].append(getStressState(word, statesDict, states_1))
 
     # Train the HMM using a portion of the training data 
-    HMM = supervised_HMM(lines, Y, 16)
+    HMM = supervised_HMM(lines, Y, 16, rhymingDict)
 
     return HMM
 
 # use supervised and unsupervised learning to get semi-supervised learning
-def semi_supervised_learning():
-    lines = load_Shakespeare_Lines()
+'''def semi_supervised_learning():
+    lines, rhymingDict = load_Shakespeare_Lines()
     HMM = supervised_learning()
     
     # Make a set of observations.
@@ -122,15 +123,13 @@ def semi_supervised_learning():
             indexes[index] = word
             index += 1
 
-    print "before unsupervise: "
-    print HMM.A
+    print ("before unsupervise: ")
+    print (HMM.A)
     HMM.unsupervised_learning(lines, 50, observations)
-    print "after unsupervised: "
-    print HMM.A
+    print ("after unsupervised: ")
+    print (HMM.A)
     numLines = 14
     for i in range(0, numLines):
         numSyllables = 10
         emission = HMM.generate_emission(HMM.indexes, numSyllables)
-        print(emission)
-
-semi_supervised_learning()
+        print(emission)'''

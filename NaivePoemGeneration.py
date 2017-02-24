@@ -69,8 +69,8 @@ def load_Shakespeare_Lines():
 				else:
 					secondRhymePair.append(lastWord)
 
-				print(firstRhymePair)
-				print (secondRhymePair)
+				#print(firstRhymePair)
+				#print (secondRhymePair)
 
 				lineNum += 1
 				# starting new quatrain
@@ -101,7 +101,7 @@ def load_Shakespeare_Lines():
 
 
 	#print(lines)
-	print(rhymingDict)
-	print(lines)
+	#print(rhymingDict)
+	#print(lines)
 	return lines, rhymingDict
 

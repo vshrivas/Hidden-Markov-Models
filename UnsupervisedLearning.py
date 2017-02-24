@@ -1,8 +1,9 @@
 from NaivePoemGeneration import load_Shakespeare_Lines
 from HMM import unsupervised_HMM
 import random
+from SupervisedLearning import *
 
-def unsupervised_learning(n_states, n_iters):
+def semisupervised_learning(n_states, n_iters):
     '''
     Trains an HMM using supervised learning on the file 'ron.txt' and
     prints the results.
@@ -12,8 +13,13 @@ def unsupervised_learning(n_states, n_iters):
     '''
     lines, rhymingDict = load_Shakespeare_Lines()
 
-    # Train the HMM.
-    HMM = unsupervised_HMM(lines, n_states, n_iters, rhymingDict)
+    # train HMM using supervised learning
+    HMM = supervised_learning()
+
+    # Train the HMM using unsupervised learning
+    HMM.unsupervised_learning(lines, n_iters, HMM.observations)
+
+    #HMM = unsupervised_HMM(lines, n_states, n_iters, rhymingDict)
     numQuatrains = 3
     numCouplets = 1
     numSyllables = 10
@@ -48,7 +54,7 @@ def unsupervised_learning(n_states, n_iters):
         line2 = HMM.generate_emission(HMM.indexes, numSyllables, rhyme1)
         print(line2)
        
-
+#numStates currently not being used
 numStates = 15
-numIter = 5
-unsupervised_learning(numStates, numIter)
+numIter = 10
+semisupervised_learning(numStates, numIter)

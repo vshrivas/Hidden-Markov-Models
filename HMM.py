@@ -199,54 +199,53 @@ class HiddenMarkovModel:
         '''
         # Calculate each element of A using the M-step formulas.
 
-        # loop through all of the states in this model; these are the states we
-        # are transitioning from 
-        for b in range(self.L):
-            # loop through all of the states again; these are the states we 
-            # are transitioning to
-            for a in range(self.L):
-                # i and j will loop through each element of A
-                # these variables keep track of the numerator and denominator 
-                # in the given formula
-                numer_count = 0.0
-                denom_count = 0.0
-                # the next two loops will actually perform the summations
-                for sequence in Y:
-                    for state_index in range(len(sequence) - 1):
-                        state = sequence[state_index]
-                        next_state = sequence[state_index + 1]
-                        if state == b and next_state == a:
-                            numer_count+=1.0
-                            denom_count+=1.0
-                        elif state == b:
-                            denom_count+=1.0
-                self.A[b][a] = numer_count/denom_count
+        labelCounts = []
+        for i in range(0, self.L):
+            labelCounts.append(0)
 
+        for i in range(0, self.L):
+            for j in range(0, self.L):
+                self.A[i][j] = 0
+
+
+        for i in range(0, self.L):
+            for j in range(0, self.D):
+                self.O[i][j] = 0
+
+        # for each input seq 
+        for seq in range(0, len(Y)):
+            # for each token starting a transition
+            for token in range(0, len(Y[seq]) - 1):
+                start = Y[seq][token]
+                end = Y[seq][token + 1]
+                # increment number of times seen transition from start to end
+                self.A[start][end] += 1
+                # increment number of times seen start
+                labelCounts[start] += 1
+
+        for fromLabel in range(0, self.L):
+            labelCount = labelCounts[fromLabel]
+            for toLabel in range(0, self.L):
+                self.A[fromLabel][toLabel] /= labelCount
 
         # Calculate each element of O using the M-step formulas.
-        # loop through the sequences of the model (the genre)
-        for w in range(self.D):
-            # loop through the states of the model (the mood)
-            for z in range(self.L):
-                # these variables keep track of the numerator and denominator 
-                # in the given formula
-                numer_count = 0.0
-                denom_count = 0.0
-                # the next two loops will actually perform the summations
-                for stateSequence_index in range(len(Y)):
-                    for state_index in range(len(Y[stateSequence_index])):
-                        word = X[stateSequence_index][state_index]
-                        state = Y[stateSequence_index][state_index]
-                        if w == observations[word] and state == z:
-                            numer_count += 1
-                            denom_count += 1
-                        elif state == z:
-                            denom_count += 1
-                self.O[z][w] = numer_count/denom_count
+        labelCounts1 = []
+        for i in range(0, self.L):
+            labelCounts1.append(0)
+
+        for seq in range(0, len(X)):
+            for token in range(0, len(X[seq])):
+                xvalue = X[seq][token]
+                yvalue = Y[seq][token]
+                self.O[yvalue][observations[xvalue]] += 1
+                labelCounts1[yvalue] += 1
+
+        for yvalue in range(0, self.L):
+            labelCount = labelCounts1[yvalue]
+            for xvalue in range(0, self.D):
+                self.O[yvalue][xvalue] /= labelCount
+
                     
-
-        pass
-
     def unsupervised_learning(self, X, iters, observations):
         '''
         Trains the HMM using the Baum-Welch algorithm on an unlabeled
@@ -469,6 +468,20 @@ class HiddenMarkovModel:
                 if(prob > maxProb):
                     state = i
                     maxProb = prob
+
+            '''# Sample prev state.
+            # to have reverse HMM generation
+            wordIndex = self.observations[endWord]
+            rand_var = random.uniform(0, 1)
+            prev_state = 0
+
+            while rand_var > 0 and prev_state < self.L:
+                rand_var -= self.O[prev_state][wordIndex]
+                prev_state += 1
+
+            prev_state -= 1
+            state = prev_state'''
+
             # use that state as the start state
             # add endWord to emission seq
             emission  = endWord
@@ -605,7 +618,7 @@ def unsupervised_HMM(X, n_states, n_iters, rhymingDict):
 
     return HMM
 
-def supervised_HMM(X, Y, n_states):
+def supervised_HMM(X, Y, n_states, rhymingDict):
     '''
     Helper function to train a supervised HMM. The function determines the
     number of unique states and observations in the given data, initializes
@@ -655,7 +668,7 @@ def supervised_HMM(X, Y, n_states):
             O[i][j] /= norm
 
     # Train an HMM with labeled data.
-    HMM = HiddenMarkovModel(A, O, indexes)
+    HMM = HiddenMarkovModel(A, O, indexes, observations, rhymingDict)
     HMM.supervised_learning(X, Y, observations)
 
     return HMM
