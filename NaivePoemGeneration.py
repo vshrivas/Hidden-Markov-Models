@@ -6,6 +6,7 @@ def load_Shakespeare_Lines():
 	# translator used to remove punctuation
 	translator = str.maketrans('', '', string.punctuation)
 	lines = []
+
 	with open('shakespeare.txt') as f:
 		# list which will store all words in a line
 		poemLine = []
@@ -103,8 +104,4 @@ def load_Shakespeare_Lines():
 	print(rhymingDict)
 	print(lines)
 	return lines, rhymingDict
-
-
-
-
 
