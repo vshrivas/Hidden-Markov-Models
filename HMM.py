@@ -506,6 +506,8 @@ class HiddenMarkovModel:
         else:
             state = random.choice(range(self.L))
 
+        lastWord = endWord
+
         # keep adding words to line until reach required syllable count
         while numSyllables < syllabCount:
             # Sample next observation.
@@ -519,6 +521,12 @@ class HiddenMarkovModel:
 
             # found next observation
             nextWord = indexes[next_obs]
+
+            if(nextWord == 'i'):
+                nextWord = I
+
+            if(nextWord == lastWord):
+                continue
             
             wordSyllab = 0
             # word isn't in dictionary
@@ -539,6 +547,8 @@ class HiddenMarkovModel:
 
             emission = nextWord + ' ' + emission
 
+            lastWord = nextWord
+
             # Sample prev state.
             # to have reverse HMM generation
             rand_var = random.uniform(0, 1)
@@ -551,6 +561,7 @@ class HiddenMarkovModel:
             prev_state -= 1
             state = prev_state
 
+        emission = emission.capitalize()
         return emission.strip()
 
 # helper method to calculate the syllable count
