@@ -523,7 +523,7 @@ class HiddenMarkovModel:
             nextWord = indexes[next_obs]
 
             if(nextWord == 'i'):
-                nextWord = I
+                nextWord = 'I'
 
             if(nextWord == lastWord):
                 continue
