@@ -197,7 +197,7 @@ def generateRNN():
 
 	print('DONE!')
 
-trainRNN()
+generateRNN()
 
 
 
