@@ -133,7 +133,7 @@ def generateRNN():
 	model.add(Dropout(0.2))
 	model.add(Dense(Y.shape[1], activation='softmax'))
 
-	filename = "weights-improvement-19-4.9376.hdf5"
+	filename = "weights-improvement-99-1.8114.hdf5"
 	model.load_weights(filename)
 
 	model.compile(loss='categorical_crossentropy', optimizer='adam')
