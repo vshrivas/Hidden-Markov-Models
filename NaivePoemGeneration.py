@@ -4,7 +4,7 @@ import string
 # to create lines the HMM can learn from
 def load_Shakespeare_Lines():
 	# translator used to remove punctuation
-	translator = str.maketrans('', '', string.punctuation)
+	#translator = str.maketrans('', '', string.punctuation)
 	lines = []
 
 	with open('shakespeare.txt') as f:
@@ -46,7 +46,9 @@ def load_Shakespeare_Lines():
 				# for each word in line
 				for word in workLine.split():
 					# append lowercase word with punctuation removed to the word list for the line
-					poemLine.append(word.translate(translator).lower())
+					for p in string.punctuation:
+						word = word.replace(p, '')
+					poemLine.append(word.lower())
 					
 				# append this line to list of all lines
 				lines.append(poemLine)
@@ -54,7 +56,9 @@ def load_Shakespeare_Lines():
 				poemLine = []
 
 				lastWord = workLine.split()[len(workLine.split()) - 1]
-				lastWord = lastWord.translate(translator).lower()
+				for p in string.punctuation:
+						lastWord = lastWord.replace(p, '')
+				lastWord = lastWord.lower()
 
 				# last two lines are a couplet
 				if (lineNum == 12 or lineNum == 13):
