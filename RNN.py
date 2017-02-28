@@ -195,7 +195,7 @@ def generateRNN():
 
 		print (output.capitalize())
 
-	print('DONE!')
+	print('DONE!!!')
 
 generateRNN()
 
