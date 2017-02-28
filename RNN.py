@@ -1,5 +1,6 @@
 import sys
 import numpy as np
+import random
 from nltk.corpus import cmudict
 import keras
 from keras.models import Sequential
@@ -13,7 +14,7 @@ from NaivePoemGeneration import load_Shakespeare_Lines
 def get_data():
 	# convert lines into X and Y encoded as integers
 	lines, rhymingDict = load_Shakespeare_Lines()
-	x_len = 5
+	x_len = 3
 	X = []
 
 	observations = {}
@@ -78,7 +79,7 @@ def trainRNN():
 	defaultSyllabCount = 2
 
 	dataX, dataY, n_patterns, observations, indexes = get_data()
-	x_len = 5
+	x_len = 3
 	num_words = len(observations.keys())
 
 	X = np.array(dataX)
@@ -106,14 +107,14 @@ def trainRNN():
 	callbacks_list = [checkpoint]
 
 	# fit the model
-	model.fit(X, Y, nb_epoch=100, batch_size=128, callbacks=callbacks_list)
+	model.fit(X, Y, nb_epoch=20, batch_size=128, callbacks=callbacks_list)
 	
 def generateRNN():
 	d = cmudict.dict()
 	defaultSyllabCount = 2
 
 	dataX, dataY, n_patterns, observations, indexes = get_data()
-	x_len = 5
+	x_len = 3
 	num_words = len(observations.keys())
 
 	X = np.array(dataX)
@@ -133,12 +134,14 @@ def generateRNN():
 	model.add(Dropout(0.2))
 	model.add(Dense(Y.shape[1], activation='softmax'))
 
-	filename = "weights-improvement-99-1.8114.hdf5"
+	# load file with optimal weights
+	filename = "weights-improvement-19-5.1070.hdf5"
 	model.load_weights(filename)
 
 	model.compile(loss='categorical_crossentropy', optimizer='adam')
 
 	numLines = 14
+
 	# generate words
 	for line in range(0, numLines):
 		output = ''
@@ -149,6 +152,7 @@ def generateRNN():
 		start = np.random.randint(0, len(dataX)-1)
 		pattern = dataX[start]
 
+		# add seed to line
 		for value in pattern:
 			output += ' ' + indexes[value]
 			if indexes[value] not in d:
@@ -158,11 +162,23 @@ def generateRNN():
 			lastresult = indexes[value]
 
 	 	while numSyllab < 10:
+	 		# generate prediction from seed
 			x = np.reshape(pattern, (1, len(pattern), 1))
 			prediction = model.predict(x, verbose=0)
-			index = np.argmax(prediction)
+
+			# sample next word from this prediction
+			rand_var = random.uniform(0, 1)
+			next_obs = 0
+
+			while rand_var > 0:
+			    rand_var -= prediction[0][next_obs]
+			    next_obs += 1
+			next_obs -= 1
+
+			index = next_obs
 			result = indexes[index]
 
+			# if getting repeated words, try new seed
 			if(result == lastResult):
 				#print('result same as lastresult')
 				start = np.random.randint(0, len(dataX)-1)
@@ -188,6 +204,7 @@ def generateRNN():
 
 			output += ' ' + result
 
+			# add predicted word to pattern, and remove first word from pattern
 			pattern.append(index)
 			pattern = pattern[1:len(pattern)]
 
