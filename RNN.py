@@ -135,7 +135,7 @@ def generateRNN():
 	model.add(Dense(Y.shape[1], activation='softmax'))
 
 	# load file with optimal weights
-	filename = "weights-improvement-19-5.1070.hdf5"
+	filename = "weights-improvement-19-5.0980.hdf5"
 	model.load_weights(filename)
 
 	model.compile(loss='categorical_crossentropy', optimizer='adam')
